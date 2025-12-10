@@ -1,5 +1,8 @@
 import customtkinter as ctk
 import keyboard
+import threading
+from PIL import Image, ImageDraw
+import pystray
 from src.constants import *
 from src.ui.components import create_tech_button, create_tech_slider, StatCard
 
@@ -10,11 +13,13 @@ class NoctisApp(ctk.CTk):
         self.config = config_manager
         self.listening_for_hotkey = False
         self.current_hotkey_hook = None
+        self.tray_icon = None
         
         self._setup_window()
         self._create_title_bar()
         self._create_layout()
         self._setup_global_hotkey()
+        self._setup_tray_icon()
         
         self._update_loop()
 
@@ -184,24 +189,47 @@ class NoctisApp(ctk.CTk):
         self.geometry(f"+{x}+{y}")
 
     def _minimize(self):
-        self.attributes('-topmost', False)
-        self.overrideredirect(False)
-        self.iconify()
-        self.bind("<Map>", self._restore)
+        """Minimize to system tray."""
+        self.withdraw()
+        if self.tray_icon:
+            self.tray_icon.visible = True
 
-    def _restore(self, event):
-        if self.state() == 'normal':
-            self.overrideredirect(True)
-            self.attributes('-topmost', True)
-            self.unbind("<Map>")
+    def _restore_from_tray(self):
+        """Restore window from system tray."""
+        if self.tray_icon:
+            self.tray_icon.visible = False
+        self.deiconify()
+        self.attributes('-topmost', True)
 
     def _on_close(self):
+        # Stop tray icon
+        if self.tray_icon:
+            self.tray_icon.stop()
         # Unhook keyboard before closing
         if self.current_hotkey_hook:
             keyboard.unhook(self.current_hotkey_hook)
         keyboard.unhook_all_hotkeys()
         self.engine.shutdown()
         self.destroy()
+
+    def _setup_tray_icon(self):
+        """Create system tray icon."""
+        # Create a simple icon (white circle on black)
+        size = 64
+        image = Image.new('RGB', (size, size), color='#050505')
+        draw = ImageDraw.Draw(image)
+        draw.ellipse([size//4, size//4, size*3//4, size*3//4], fill='#FFFFFF')
+        
+        menu = pystray.Menu(
+            pystray.MenuItem('Show', lambda: self.after(0, self._restore_from_tray), default=True),
+            pystray.MenuItem('Exit', lambda: self.after(0, self._on_close))
+        )
+        
+        self.tray_icon = pystray.Icon('noctis', image, 'Noctis', menu)
+        self.tray_icon.visible = False
+        
+        # Run tray icon in background thread
+        threading.Thread(target=self.tray_icon.run, daemon=True).start()
 
     # Global Hotkey System
     def _setup_global_hotkey(self):
