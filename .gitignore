@@ -1,0 +1,15 @@
+# Build artifacts
+dist/
+build/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+
+# Config (user-specific)
+config.json
+
+# IDE
+.vscode/
+.idea/
