@@ -138,6 +138,36 @@ class NoctisApp(ctk.CTk):
         )
         self.btn_hotkey.pack(side="right")
 
+        # Monitor Selection
+        from src.core.sensor import get_monitor_list
+        monitor_frame = ctk.CTkFrame(self.settings_frame, fg_color="transparent")
+        monitor_frame.pack(fill="x", pady=(10, 0))
+        
+        ctk.CTkLabel(monitor_frame, text="Monitor:", font=FONT_TECH_NORMAL, text_color=COLOR_TEXT_DIM).pack(side="left")
+        
+        monitors = get_monitor_list()
+        current_index = self.config.get('monitor_index') - 1
+        if current_index < 0 or current_index >= len(monitors):
+            current_index = 0
+        
+        self.monitor_dropdown = ctk.CTkOptionMenu(
+            monitor_frame,
+            values=monitors,
+            command=self._update_monitor,
+            width=180,
+            height=32,
+            fg_color=COLOR_FRAME,
+            button_color=COLOR_BORDER,
+            button_hover_color=COLOR_TEXT_DIM,
+            dropdown_fg_color=COLOR_FRAME,
+            dropdown_hover_color=COLOR_BORDER,
+            text_color=COLOR_TEXT,
+            font=FONT_TECH_NORMAL,
+            corner_radius=CORNER_RADIUS
+        )
+        self.monitor_dropdown.set(monitors[current_index])
+        self.monitor_dropdown.pack(side="right")
+
     def _toggle_system(self):
         new_state = not self.engine.running
         self.engine.set_running(new_state)
@@ -151,6 +181,14 @@ class NoctisApp(ctk.CTk):
         val = round(value, 1)
         self.config.set('max_gamma', val)
         self.lbl_max_gamma.configure(text=f"Max Boost: {val}")
+
+    def _update_monitor(self, selection):
+        # Extract monitor index from selection string (e.g., "Monitor 1 (1920x1080)" -> 1)
+        try:
+            index = int(selection.split()[1])
+            self.config.set('monitor_index', index)
+        except:
+            self.config.set('monitor_index', 1)
 
     def _update_loop(self):
         # Poll Engine State

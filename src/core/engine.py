@@ -40,10 +40,11 @@ class NoctisEngine:
                 # 1. Update Config (hot reload values)
                 threshold = self.config.get("threshold")
                 max_gamma = self.config.get("max_gamma")
+                monitor_index = self.config.get("monitor_index")
 
                 # 2. Only measure when system is enabled
                 if self.running:
-                    raw_brightness = get_screen_brightness()
+                    raw_brightness = get_screen_brightness(monitor_index)
                     
                     # Smooth
                     brightness_buffer.append(raw_brightness)

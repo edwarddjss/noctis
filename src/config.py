@@ -8,7 +8,8 @@ class ConfigManager:
             "threshold": 35,
             "max_gamma": 2.4,
             "transition_speed": 0.05,
-            "hotkey": "insert"
+            "hotkey": "insert",
+            "monitor_index": 1
         }
         self.load()
 

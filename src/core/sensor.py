@@ -1,40 +1,44 @@
 import mss
 import numpy as np
 
-def get_screen_brightness():
-    """Captures the center of the primary monitor and returns average brightness."""
+def get_monitor_list():
+    """Returns list of monitor names for selection."""
     try:
         with mss.mss() as sct:
-            # Capture center 300x300 pixels
-            # Note: sct.monitors[1] is usually the primary
+            monitors = []
+            for i in range(1, len(sct.monitors)):
+                m = sct.monitors[i]
+                monitors.append(f"Monitor {i} ({m['width']}x{m['height']})")
+            return monitors
+    except:
+        return ["Monitor 1"]
+
+def get_screen_brightness(monitor_index=None):
+    """Captures the center of the specified monitor and returns average brightness."""
+    try:
+        with mss.mss() as sct:
             if len(sct.monitors) < 2:
                 return 0.0
 
-            # Iterate all monitors to find valid signal
-            max_brightness = 0.0
+            # If no monitor specified, use first non-combined
+            if monitor_index is None or monitor_index < 1 or monitor_index >= len(sct.monitors):
+                monitor_index = 1
             
-            # Skip monitor 0 (all combined)
-            for i in range(1, len(sct.monitors)):
-                monitor = sct.monitors[i]
-                
-                # Capture center small patch
-                size = 100 # Smaller for speed
-                left = int(monitor["left"] + (monitor["width"] / 2) - (size / 2))
-                top = int(monitor["top"] + (monitor["height"] / 2) - (size / 2))
-                box = {"top": top, "left": left, "width": size, "height": size}
-                
-                try:
-                    sct_img = sct.grab(box)
-                    img = np.array(sct_img)
-                    val = np.mean(img[:,:,:3])
-                    
-                    if val > max_brightness:
-                        max_brightness = val
-                except:
-                    continue
+            monitor = sct.monitors[monitor_index]
             
-            return max_brightness
+            # Capture center small patch
+            size = 100
+            left = int(monitor["left"] + (monitor["width"] / 2) - (size / 2))
+            top = int(monitor["top"] + (monitor["height"] / 2) - (size / 2))
+            box = {"top": top, "left": left, "width": size, "height": size}
+            
+            try:
+                sct_img = sct.grab(box)
+                img = np.array(sct_img)
+                return np.mean(img[:,:,:3])
+            except:
+                return 0.0
             
     except Exception as e:
-        print(f"Sensor Error (Detailed): {e}")
+        print(f"Sensor Error: {e}")
         return 0.0
