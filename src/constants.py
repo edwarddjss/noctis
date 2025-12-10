@@ -1,4 +1,4 @@
-# design_constants.py
+# constants.py
 
 # Colors (Null Aesthetic)
 COLOR_BG = "#050505"           # Void Black

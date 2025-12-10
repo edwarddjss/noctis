@@ -51,8 +51,7 @@ class NoctisApp(ctk.CTk):
         self.title_lbl.bind("<Button-1>", self._start_move)
         self.title_lbl.bind("<B1-Motion>", self._do_move)
 
-        # Buttons (Minimal text)
-        # Buttons (Minimal text)
+        # Buttons
         self.btn_close = ctk.CTkButton(self.title_bar, text="✕", width=32, height=32, fg_color=COLOR_FRAME, hover_color=COLOR_DANGER, text_color=COLOR_TEXT, corner_radius=CORNER_RADIUS, border_width=BORDER_WIDTH, border_color=COLOR_BORDER, command=self._on_close)
         self.btn_close.pack(side="right", padx=5)
         
@@ -92,7 +91,6 @@ class NoctisApp(ctk.CTk):
         self.settings_frame.pack(fill="x")
 
         # Threshold
-        # Threshold
         self.lbl_thresh = ctk.CTkLabel(self.settings_frame, text=f"Sensitivity: {self.config.get('threshold')}", font=FONT_TECH_NORMAL, text_color=COLOR_TEXT_DIM, anchor="w")
         self.lbl_thresh.pack(pady=(0, 5), fill="x")
         
@@ -112,8 +110,6 @@ class NoctisApp(ctk.CTk):
         
         ctk.CTkLabel(hotkey_frame, text="Toggle Hotkey:", font=FONT_TECH_NORMAL, text_color=COLOR_TEXT_DIM).pack(side="left")
         
-        self.btn_hotkey = ctk.CTkButton(
-            hotkey_frame, 
         # Initial key text
         key = self.config.get('hotkey').upper()
         if key == "INSERT": key = "INS"
