@@ -1,0 +1,25 @@
+# Build artifacts
+dist/
+build/
+*.spec
+
+# Python (legacy)
+__pycache__/
+*.pyc
+
+# Config (user-specific)
+config.json
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+
+# Rust/Cargo
+target/
+
+# Temporary/Debug files
+*.txt
+*.log
