@@ -11,12 +11,14 @@ import { apiGet, errorMessage, schemas } from "@/lib/client/api";
 import { feedTeamIds } from "@/lib/client/follows";
 import { useApi } from "@/lib/client/use-api";
 import { useFollows } from "@/lib/client/use-follows";
+import { useMeta } from "@/lib/client/use-meta";
 
 type Tab = "matches" | "table";
 
 export function CompetitionView({ id }: { id: string }) {
   const [tab, setTab] = useState<Tab>("matches");
   const { state } = useFollows();
+  const { videoEnabled } = useMeta();
   const enc = encodeURIComponent(id);
   const res = useApi(`comp:${id}`, (s) => apiGet(`/api/competitions/${enc}`, schemas.competition, s), { pollMs: 30_000 });
   const table = useApi(tab === "table" ? `table:${id}` : null, (s) => apiGet(`/api/competitions/${enc}/standings`, schemas.standings, s));
@@ -59,7 +61,7 @@ export function CompetitionView({ id }: { id: string }) {
               <h2 className="section__title">Live & upcoming</h2>
               <div className="card">
                 {res.data.next.map((m) => (
-                  <MatchRow key={m.id} match={m} streamAvailable={res.data!.streams[m.id]} />
+                  <MatchRow key={m.id} match={m} streamAvailable={videoEnabled ? res.data!.streams[m.id] : undefined} />
                 ))}
               </div>
             </section>

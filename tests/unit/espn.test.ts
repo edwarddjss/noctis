@@ -138,6 +138,28 @@ describe("EspnProvider", () => {
     expect(await provider.getMatchDetails("eng.1.1")).toBeNull();
   });
 
+  it("maps line-ups with formations, starters and substitutes", async () => {
+    const { provider } = setup();
+    const d = await provider.getMatchDetails("eng.1.900001");
+    expect(d?.lineups?.home).toMatchObject({ formation: "4-3-3", starters: [{ name: "David Raya", number: 22, position: "G" }, { name: "Bukayo Saka" }], substitutes: [{ name: "Leandro Trossard" }] });
+    expect(d?.lineups?.away?.formation).toBe("4-2-3-1");
+    expect((await provider.getMatchDetails("eng.1.900002"))?.lineups).toBeUndefined();
+  });
+
+  it("lists every match on a day across leagues, in kickoff order", async () => {
+    const { provider, fetchImpl } = setup();
+    const day = await provider.getMatchesByDate("2026-10-18");
+    expect(day.map((m) => m.id)).toHaveLength(6);
+    expect(day.map((m) => m.kickoff)).toEqual([...day.map((m) => m.kickoff)].sort());
+    expect(day.some((m) => m.status === "scheduled") && day.some((m) => m.status === "finished")).toBe(true);
+    expect(fetchImpl.mock.calls.some((c) => /scoreboard\?dates=20261018&limit=200$/.test(String(c[0])))).toBe(true);
+  });
+
+  it("links a team to its league", async () => {
+    const { provider } = setup();
+    expect((await provider.getTeam("esp.1.83"))?.competitionId).toBe("esp.1");
+  });
+
   it("maps standings", async () => {
     const { provider } = setup();
     const [table] = await provider.getStandings("eng.1");

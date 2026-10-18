@@ -89,7 +89,7 @@ export async function fetchJson<S extends z.ZodType>(url: string, opts: FetchJso
     const hit = cache.get(cacheKey);
     if (hit !== undefined) return hit as z.infer<S>;
     const pending = inflight.get(cacheKey);
-    if (pending) return pending as Promise<z.infer<S>>;
+    if (pending) return abandonable(pending as Promise<z.infer<S>>, signal);
   }
 
   const staleOr = (err: ProviderError): z.infer<S> => {
@@ -103,13 +103,15 @@ export async function fetchJson<S extends z.ZodType>(url: string, opts: FetchJso
     throw err;
   };
 
-  const run = async (): Promise<z.infer<S>> => {
+  // `sig` is the caller's signal for unshared requests, and undefined for shared
+  // (cached) ones: one caller leaving must not cancel the fetch for the others.
+  const run = async (sig: AbortSignal | undefined): Promise<z.infer<S>> => {
     if (preflight) return staleOr(preflight);
     let lastErr: unknown;
     for (let attempt = 0; attempt <= retries; attempt++) {
-      if (signal?.aborted) throw new ProviderError("aborted", "Request aborted");
+      if (sig?.aborted) throw new ProviderError("aborted", "Request aborted");
       const timeout = AbortSignal.timeout(timeoutMs);
-      const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+      const combined = sig ? AbortSignal.any([sig, timeout]) : timeout;
       let retryAfterMs: number | undefined;
       try {
         const res = await fetchImpl(url, { headers, signal: combined, cache: "no-store" });
@@ -139,20 +141,41 @@ export async function fetchJson<S extends z.ZodType>(url: string, opts: FetchJso
         return parsed.data;
       } catch (err) {
         let e = err;
-        if (signal?.aborted) throw new ProviderError("aborted", "Request aborted");
+        if (sig?.aborted) throw new ProviderError("aborted", "Request aborted");
         if (timeout.aborted && !(err instanceof ProviderError)) e = new ProviderError("timeout", "Upstream request timed out");
         lastErr = e;
         if (attempt === retries || !isRetryable(e)) break;
         const delay = Math.min(maxDelayMs, retryAfterMs ?? backoffDelay(attempt, baseDelayMs, maxDelayMs));
         log.info("provider.retry", { url: redactUrl(url), attempt: attempt + 1, delay });
-        await sleep(delay, signal);
+        await sleep(delay, sig);
       }
     }
     return staleOr(lastErr instanceof ProviderError ? lastErr : new ProviderError("upstream", "Upstream request failed"));
   };
 
-  if (!cacheKey) return run();
-  const p = run().finally(() => inflight.delete(cacheKey));
+  if (!cacheKey) return run(signal);
+  if (signal?.aborted) throw new ProviderError("aborted", "Request aborted");
+  const p = run(undefined).finally(() => inflight.delete(cacheKey));
   inflight.set(cacheKey, p);
-  return p;
+  return abandonable(p, signal);
+}
+
+/** Let one caller stop waiting on a shared promise without cancelling it. */
+function abandonable<T>(p: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return p;
+  if (signal.aborted) return Promise.reject(new ProviderError("aborted", "Request aborted"));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(new ProviderError("aborted", "Request aborted"));
+    signal.addEventListener("abort", onAbort, { once: true });
+    p.then(
+      (v) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(v);
+      },
+      (e) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(e);
+      },
+    );
+  });
 }

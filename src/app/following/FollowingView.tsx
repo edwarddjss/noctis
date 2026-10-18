@@ -12,6 +12,7 @@ import { apiGet, errorMessage, schemas } from "@/lib/client/api";
 import { feedCompetitionIds, feedTeamIds, type FollowItem } from "@/lib/client/follows";
 import { useApi } from "@/lib/client/use-api";
 import { useFollows } from "@/lib/client/use-follows";
+import { useMeta } from "@/lib/client/use-meta";
 
 type Kind = "teams" | "players" | "competitions";
 const KIND_LABEL: Record<Kind, string> = { teams: "Teams", players: "Players", competitions: "Leagues" };
@@ -171,6 +172,7 @@ function PopularLeagues() {
 
 export function FollowingView() {
   const { state, store } = useFollows();
+  const { videoEnabled } = useMeta();
   const teams = useMemo(() => feedTeamIds(state), [state]);
   const comps = useMemo(() => feedCompetitionIds(state), [state]);
   const hasFollows = teams.length + comps.length > 0;
@@ -209,7 +211,7 @@ export function FollowingView() {
               <h2 className="section__title">Live now</h2>
               <div className="card">
                 {live.map((m) => (
-                  <MatchRow key={m.id} match={m} streamAvailable={feed.data!.streams[m.id]} showCompetition />
+                  <MatchRow key={m.id} match={m} streamAvailable={videoEnabled ? feed.data!.streams[m.id] : undefined} showCompetition />
                 ))}
               </div>
             </section>
@@ -219,7 +221,7 @@ export function FollowingView() {
             {upcoming.length ? (
               <div className="card">
                 {upcoming.map((m) => (
-                  <MatchRow key={m.id} match={m} streamAvailable={feed.data!.streams[m.id]} showCompetition />
+                  <MatchRow key={m.id} match={m} streamAvailable={videoEnabled ? feed.data!.streams[m.id] : undefined} showCompetition />
                 ))}
               </div>
             ) : (

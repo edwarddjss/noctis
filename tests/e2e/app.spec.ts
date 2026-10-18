@@ -6,6 +6,11 @@ const SECOND_STREAM = "eng.1.900003"; // Tottenham v Man United, live 12', test 
 const NO_STREAM = "eng.1.900002"; // Liverpool v Man City, half-time, no stream
 const BROKEN_STREAM = "eng.1.900004"; // configured stream whose media 404s
 
+// Logos point at ESPN's CDN; don't let tests wait on the network for them.
+test.beforeEach(async ({ page }) => {
+  await page.route(/espncdn\.com/, (route) => route.abort());
+});
+
 test("follow and unfollow a team", async ({ page }) => {
   await page.goto("/following");
   await expect(page.getByText("Follow teams, players or leagues")).toBeVisible();
@@ -62,6 +67,35 @@ test("match page shows goal events", async ({ page }) => {
   await expect(page.getByTestId("score-header")).toContainText("2 – 1");
   await expect(page.locator(".events")).toContainText("Bukayo Saka");
   await expect(page.locator(".events")).toContainText("Cole Palmer");
+});
+
+test("day strip shows every match on a day, not just live ones", async ({ page }) => {
+  await page.goto("/live");
+  await page.getByTestId("day-strip").getByRole("tab", { name: "Today" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Matches");
+  const list = page.getByTestId("live-list");
+  await expect(list.getByTestId("match-row")).toHaveCount(6);
+  await expect(list).toContainText("Newcastle United"); // scheduled
+  await expect(list.locator('[data-match-id="eng.1.900005"]')).toContainText("FT"); // finished
+  await page.getByTestId("day-strip").getByRole("tab", { name: "Live" }).click();
+  await expect(list.getByTestId("match-row")).toHaveCount(4);
+});
+
+test("match page shows line-ups and team page links to its league", async ({ page }) => {
+  await page.goto(`/match/${WITH_STREAM}`);
+  const lineups = page.getByTestId("lineups");
+  await expect(lineups).toContainText("4-3-3");
+  await expect(lineups).toContainText("David Raya");
+  await expect(lineups).toContainText("Cole Palmer");
+  await page.goto("/team/eng.1.359");
+  await expect(page.getByText("Bukayo Saka")).toBeVisible();
+  await page.getByTestId("team-league-link").click();
+  await expect(page).toHaveURL(/\/competition\/eng\.1$/);
+});
+
+test("unknown pages show a friendly not-found screen", async ({ page }) => {
+  await page.goto("/this-does-not-exist");
+  await expect(page.getByText("Page not found")).toBeVisible();
 });
 
 test("league page shows the table", async ({ page }) => {

@@ -5,7 +5,9 @@ import { statusText } from "@/lib/client/format";
 import { Crest } from "./Crest";
 import { Icon } from "./Icon";
 
-export function StreamBadge({ available, live }: { available: boolean; live: boolean }) {
+/** `available` undefined = video not configured: show no badge at all. */
+export function StreamBadge({ available, live }: { available: boolean | undefined; live: boolean }) {
+  if (available === undefined) return null;
   if (available)
     return (
       <span className="badge badge--video" title="An authorized video stream is configured for this match">
@@ -16,7 +18,7 @@ export function StreamBadge({ available, live }: { available: boolean; live: boo
   return null;
 }
 
-export function MatchRow({ match, streamAvailable = false, showCompetition = false }: { match: Match; streamAvailable?: boolean; showCompetition?: boolean }) {
+export function MatchRow({ match, streamAvailable, showCompetition = false }: { match: Match; streamAvailable?: boolean; showCompetition?: boolean }) {
   const live = isLive(match.status);
   const started = match.score.home !== null;
   return (

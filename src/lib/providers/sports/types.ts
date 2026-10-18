@@ -32,6 +32,8 @@ export interface SportsDataProvider {
   getFixtures(query: FixtureQuery, opts?: RequestOptions): Promise<Match[]>;
   getLiveMatches(opts?: RequestOptions): Promise<Match[]>;
   getMatchDetails(id: string, opts?: RequestOptions): Promise<MatchDetails | null>;
+  /** Every covered match on a calendar day (YYYY-MM-DD, provider's local day). */
+  getMatchesByDate(date: string, opts?: RequestOptions): Promise<Match[]>;
   /** League table(s); empty for knockout cups or when unavailable. */
   getStandings(competitionId: string, opts?: RequestOptions): Promise<StandingsGroup[]>;
   /** Attribution line the UI must show for this data source. */
@@ -43,6 +45,12 @@ export function normalizeQuery(q: string): string | null {
   const s = q.normalize("NFKC").replace(/[^\p{L}\p{N} .'\-]/gu, "").replace(/\s+/g, " ").trim();
   if (s.length < 3 || s.length > 40) return null;
   return s;
+}
+
+export function isValidDate(d: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  const t = Date.parse(`${d}T00:00:00Z`);
+  return Number.isFinite(t) && new Date(t).toISOString().startsWith(d);
 }
 
 export function isValidId(id: string): boolean {

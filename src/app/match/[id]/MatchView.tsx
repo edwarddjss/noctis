@@ -4,6 +4,7 @@ import { BackButton } from "@/components/BackButton";
 import { Crest } from "@/components/Crest";
 import { FollowButton } from "@/components/FollowButton";
 import { Icon } from "@/components/Icon";
+import { Lineups } from "@/components/Lineups";
 import { ScoreHeader } from "@/components/ScoreHeader";
 import { ErrorState, NoStream, Skeleton } from "@/components/States";
 import { isLive } from "@/lib/domain";
@@ -70,6 +71,13 @@ export function MatchView({ id }: { id: string }) {
               ))}
             </div>
           </section>
+
+          {m.lineups && (
+            <section className="section">
+              <h2 className="section__title">Line-ups</h2>
+              <Lineups match={m} lineups={m.lineups} />
+            </section>
+          )}
 
           <section className="section">
             <h2 className="section__title">Events</h2>

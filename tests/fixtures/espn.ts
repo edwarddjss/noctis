@@ -115,6 +115,21 @@ export function summary(eventId: string) {
       participants: d.athletesInvolved.map((a) => ({ athlete: a })),
     })),
     gameInfo: { venue: { fullName: e.competitions[0]!.venue.fullName } },
+    rosters:
+      eventId === "900001"
+        ? [
+            {
+              homeAway: "home",
+              formation: "4-3-3",
+              roster: [
+                { starter: true, jersey: "22", athlete: { displayName: "David Raya" }, position: { abbreviation: "G" } },
+                { starter: true, jersey: "7", athlete: { displayName: "Bukayo Saka" }, position: { abbreviation: "RW" } },
+                { starter: false, jersey: "19", athlete: { displayName: "Leandro Trossard" }, position: { abbreviation: "SUB" } },
+              ],
+            },
+            { homeAway: "away", formation: { name: "4-2-3-1" }, roster: [{ starter: true, jersey: "10", athlete: { displayName: "Cole Palmer" }, position: { abbreviation: "AM" } }] },
+          ]
+        : [],
   };
 }
 

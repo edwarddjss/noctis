@@ -73,14 +73,29 @@ export const MatchEventSchema = z.object({
 });
 export type MatchEvent = z.infer<typeof MatchEventSchema>;
 
+export const LineupPlayerSchema = z.object({
+  name: z.string(),
+  number: z.number().nullable().optional(),
+  position: z.string().optional(),
+});
+export const LineupSchema = z.object({
+  formation: z.string().optional(),
+  starters: z.array(LineupPlayerSchema),
+  substitutes: z.array(LineupPlayerSchema),
+});
+export type Lineup = z.infer<typeof LineupSchema>;
+
 export const MatchDetailsSchema = MatchSchema.extend({
   events: z.array(MatchEventSchema),
+  lineups: z.object({ home: LineupSchema.nullable(), away: LineupSchema.nullable() }).optional(),
 });
 export type MatchDetails = z.infer<typeof MatchDetailsSchema>;
 
 export const TeamDetailsSchema = TeamSchema.extend({
   founded: z.number().nullable().optional(),
   venue: z.string().optional(),
+  /** Main domestic league, for linking to its table. */
+  competitionId: z.string().optional(),
   squad: z.array(PlayerSchema),
 });
 export type TeamDetails = z.infer<typeof TeamDetailsSchema>;

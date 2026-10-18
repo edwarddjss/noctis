@@ -29,6 +29,13 @@ export function TeamView({ id }: { id: string }) {
             </div>
             <FollowButton item={{ kind: "team", id: t.id, name: t.name, imageUrl: t.crestUrl ?? null }} />
           </div>
+          {t.competitionId && (
+            <p className="pad">
+              <Link href={`/competition/${t.competitionId}`} className="small" data-testid="team-league-link">
+                League table & fixtures →
+              </Link>
+            </p>
+          )}
           <section className="section">
             <h2 className="section__title">Next</h2>
             {res.data.next.length ? (

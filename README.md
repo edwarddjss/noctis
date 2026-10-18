@@ -12,6 +12,15 @@ MatchNest never scrapes, restreams, proxies or bypasses anything. It plays only 
 
 ---
 
+## What's in the app
+
+- **Following:** search and follow teams, players (adds their club's matches) and leagues. "Popular leagues" are shown on first launch.
+- **Live / Matches:** live scores across 36 competitions, grouped by league, biggest first. A day strip covers yesterday through next week.
+- **Match:** score, minute, goal and card events, line-ups with formations.
+- **Team:** next matches, results, squad, link to the league table.
+- **League:** fixtures, results and the table, with your teams highlighted.
+- **Video (later):** Watch, Multi-view (up to 4) and AirPlay are built in and turn on when an authorized stream source is configured. Until then the video UI stays hidden apart from a "No authorized stream available" note on match pages.
+
 ## Quick start
 
 ```bash

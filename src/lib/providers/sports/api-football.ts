@@ -56,6 +56,16 @@ const WireFixtureItem = z.object({
   league: z.object({ id: z.number(), name: z.string(), country: nstr, logo: nstr, season: nnum, round: nstr }),
   teams: z.object({ home: WireFixtureTeam, away: WireFixtureTeam }),
   goals: z.object({ home: nnum, away: nnum }),
+  lineups: z
+    .array(
+      z.object({
+        team: z.object({ id: z.number() }),
+        formation: nstr,
+        startXI: z.array(z.object({ player: z.object({ name: z.string(), number: nnum, pos: nstr }) })).nullish(),
+        substitutes: z.array(z.object({ player: z.object({ name: z.string(), number: nnum, pos: nstr }) })).nullish(),
+      }),
+    )
+    .optional(),
   events: z
     .array(
       z.object({
@@ -368,7 +378,19 @@ export class ApiFootballProvider implements SportsDataProvider {
   async getMatchDetails(id: string, opts?: RequestOptions): Promise<MatchDetails | null> {
     const item = parseItems(await this.get("/fixtures", { id }, this.ttl.live, opts), WireFixtureItem, "fixture")[0];
     if (!item) return null;
-    return { ...mapFixture(item), events: (item.events ?? []).map((e) => mapEvent(e, item.teams.home.id)) };
+    const lineup = (teamId: number) => {
+      const l = item.lineups?.find((x) => x.team.id === teamId);
+      if (!l) return null;
+      const map = (xs: typeof l.startXI) => (xs ?? []).map((x) => ({ name: x.player.name, number: x.player.number ?? null, position: opt(x.player.pos) }));
+      return { formation: opt(l.formation), starters: map(l.startXI), substitutes: map(l.substitutes) };
+    };
+    const lineups = item.lineups?.length ? { home: lineup(item.teams.home.id), away: lineup(item.teams.away.id) } : undefined;
+    return { ...mapFixture(item), events: (item.events ?? []).map((e) => mapEvent(e, item.teams.home.id)), lineups };
+  }
+
+  async getMatchesByDate(date: string, opts?: RequestOptions): Promise<Match[]> {
+    const items = parseItems(await this.get("/fixtures", { date }, this.ttl.fixtures, opts), WireFixtureItem, "fixtures_by_date");
+    return items.map(mapFixture).sort((a, b) => a.kickoff.localeCompare(b.kickoff));
   }
 
   async getStandings(competitionId: string, opts?: RequestOptions): Promise<StandingsGroup[]> {

@@ -62,3 +62,23 @@ describe("backoff helpers", () => {
     expect(parseRetryAfter(null)).toBeUndefined();
   });
 });
+
+describe("shared in-flight requests", () => {
+  it("one caller aborting does not cancel the request for others", async () => {
+    let release!: (r: Response) => void;
+    const fetchImpl = vi.fn((_url: string, init?: RequestInit) => {
+      expect(init?.signal).toBeDefined();
+      return new Promise<Response>((r) => (release = r));
+    });
+    const cache = new TtlCache();
+    const a = new AbortController();
+    const opts = { schema, fetchImpl: fetchImpl as unknown as typeof fetch, cache, cacheKey: "shared" };
+    const first = fetchJson("https://x.test/s", { ...opts, signal: a.signal });
+    const second = fetchJson("https://x.test/s", opts);
+    a.abort();
+    await expect(first).rejects.toMatchObject({ code: "aborted" });
+    release(json({ v: 42 }));
+    await expect(second).resolves.toEqual({ v: 42 });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});

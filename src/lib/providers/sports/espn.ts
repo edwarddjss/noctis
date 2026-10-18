@@ -14,7 +14,7 @@
  * ESPN endpoints are scoped by league.
  */
 import { z } from "zod";
-import type { Competition, Match, MatchDetails, MatchEvent, MatchStatus, Player, StandingsGroup, Team, TeamDetails } from "../../domain";
+import type { Competition, Lineup, Match, MatchDetails, MatchEvent, MatchStatus, Player, StandingsGroup, Team, TeamDetails } from "../../domain";
 import { ProviderError } from "../../errors";
 import { TtlCache } from "../../http/cache";
 import { fetchJson, sharedCache } from "../../http/fetch-json";
@@ -139,8 +139,49 @@ const SummarySchema = z
     header: z.object({ id: z.union([z.string(), z.number()]).transform(String).optional(), competitions: z.array(WireCompetition).min(1), league: z.object({ slug: str, name: str }).passthrough().nullish() }).passthrough(),
     keyEvents: z.array(z.unknown()).nullish(),
     gameInfo: z.object({ venue: z.object({ fullName: str }).passthrough().nullish() }).passthrough().nullish(),
+    rosters: z.array(z.unknown()).nullish(),
   })
   .passthrough();
+const WireRoster = z
+  .object({
+    homeAway: z.enum(["home", "away"]),
+    formation: z.union([z.string(), z.object({ name: str }).passthrough()]).nullish(),
+    roster: z
+      .array(
+        z
+          .object({
+            starter: z.boolean().nullish(),
+            jersey: str,
+            athlete: z.object({ displayName: z.string() }).passthrough(),
+            position: z.object({ abbreviation: str, displayName: str }).passthrough().nullish(),
+          })
+          .passthrough(),
+      )
+      .default([]),
+  })
+  .passthrough();
+
+export function mapRosters(raw: unknown[] | null | undefined): MatchDetails["lineups"] {
+  if (!raw?.length) return undefined;
+  const out: { home: Lineup | null; away: Lineup | null } = { home: null, away: null };
+  for (const r of raw) {
+    const p = WireRoster.safeParse(r);
+    if (!p.success || p.data.roster.length === 0) continue;
+    const players = p.data.roster.map((x) => ({
+      name: x.athlete.displayName,
+      number: x.jersey && !isNaN(Number(x.jersey)) ? Number(x.jersey) : null,
+      position: x.position?.abbreviation ?? x.position?.displayName ?? undefined,
+      starter: Boolean(x.starter),
+    }));
+    const f = p.data.formation;
+    out[p.data.homeAway] = {
+      formation: (typeof f === "string" ? f : f?.name) ?? undefined,
+      starters: players.filter((x) => x.starter).map(({ starter, ...rest }) => (void starter, rest)),
+      substitutes: players.filter((x) => !x.starter).map(({ starter, ...rest }) => (void starter, rest)),
+    };
+  }
+  return out.home || out.away ? out : undefined;
+}
 const KeyEvent = z
   .object({
     type: z.object({ type: str, text: str }).passthrough().nullish(),
@@ -443,7 +484,14 @@ export class EspnProvider implements SportsDataProvider {
         teamName: base.name,
       });
     }
-    return { ...base, country: LEAGUE_BY_SLUG.get(p.league)?.country, venue: team.team.venue?.fullName ?? undefined, founded: null, squad };
+    return {
+      ...base,
+      country: LEAGUE_BY_SLUG.get(p.league)?.country,
+      venue: team.team.venue?.fullName ?? undefined,
+      founded: null,
+      competitionId: p.league,
+      squad,
+    };
   }
 
   async getPlayer(id: string, opts?: RequestOptions): Promise<PlayerDetails | null> {
@@ -517,6 +565,18 @@ export class EspnProvider implements SportsDataProvider {
     return [...byId.values()];
   }
 
+  async getMatchesByDate(date: string, opts?: RequestOptions): Promise<Match[]> {
+    const compact = date.replace(/-/g, "");
+    const isToday = compact === ymd(this.now());
+    const ttl = isToday ? this.ttl.live : this.ttl.fixtures;
+    const results = await pool(this.leagues, this.cfg.concurrency ?? 6, (l) => this.scoreboard(l.slug, compact, ttl, opts));
+    const ok = results.filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<EspnProvider["scoreboard"]>>> => r.status === "fulfilled");
+    if (ok.length === 0 && results.length) throw (results[0] as PromiseRejectedResult).reason;
+    const byId = new Map<string, Match>();
+    for (const r of ok) for (const m of r.value) byId.set(m.id, strip(m));
+    return [...byId.values()].sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+  }
+
   async getMatchDetails(id: string, opts?: RequestOptions): Promise<MatchDetails | null> {
     const p = parseId(id);
     if (!p) return null;
@@ -550,7 +610,7 @@ export class EspnProvider implements SportsDataProvider {
         if (ev) events.push(ev);
       }
     }
-    return { ...strip(m), venue: m.venue ?? body.gameInfo?.venue?.fullName ?? undefined, events };
+    return { ...strip(m), venue: m.venue ?? body.gameInfo?.venue?.fullName ?? undefined, events, lineups: mapRosters(body.rosters) };
   }
 
   async getStandings(competitionId: string, opts?: RequestOptions): Promise<StandingsGroup[]> {

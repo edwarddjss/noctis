@@ -45,6 +45,7 @@ export const schemas = {
   feed: z.object({ matches: z.array(MatchSchema), streams: Availability, partial: z.boolean() }),
   live: z.object({ matches: z.array(MatchSchema), streams: Availability, order: z.array(z.string()), fetchedAt: z.string() }),
   standings: z.object({ groups: z.array(StandingsGroupSchema) }),
+  day: z.object({ matches: z.array(MatchSchema), streams: Availability, order: z.array(z.string()), fetchedAt: z.string() }),
   team: z.object({ team: TeamDetailsSchema, next: z.array(MatchSchema), last: z.array(MatchSchema) }),
   player: z.object({ player: PlayerSchema }),
   match: z.object({
