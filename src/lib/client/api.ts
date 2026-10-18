@@ -1,7 +1,7 @@
 "use client";
 /** Typed, validated client for MatchNest's own /api routes (never third parties). */
 import { z } from "zod";
-import { CompetitionSchema, MatchDetailsSchema, MatchSchema, PlayerSchema, TeamDetailsSchema, TeamSchema } from "../domain";
+import { CompetitionSchema, MatchDetailsSchema, MatchSchema, PlayerSchema, StandingsGroupSchema, TeamDetailsSchema, TeamSchema } from "../domain";
 import { AuthorizedStreamSchema } from "../providers/streams/types";
 
 export class ApiError extends Error {
@@ -38,12 +38,13 @@ export async function apiGet<S extends z.ZodType>(path: string, schema: S, signa
 const Availability = z.record(z.string(), z.boolean());
 
 export const schemas = {
-  meta: z.object({ sportsProvider: z.string(), isMock: z.boolean(), streamProvider: z.string(), syncEnabled: z.boolean() }),
+  meta: z.object({ sportsProvider: z.string(), attribution: z.string(), streamProvider: z.string(), syncEnabled: z.boolean() }),
   teams: z.object({ teams: z.array(TeamSchema) }),
   players: z.object({ players: z.array(PlayerSchema) }),
   competitions: z.object({ competitions: z.array(CompetitionSchema) }),
   feed: z.object({ matches: z.array(MatchSchema), streams: Availability, partial: z.boolean() }),
-  live: z.object({ matches: z.array(MatchSchema), streams: Availability, fetchedAt: z.string() }),
+  live: z.object({ matches: z.array(MatchSchema), streams: Availability, order: z.array(z.string()), fetchedAt: z.string() }),
+  standings: z.object({ groups: z.array(StandingsGroupSchema) }),
   team: z.object({ team: TeamDetailsSchema, next: z.array(MatchSchema), last: z.array(MatchSchema) }),
   player: z.object({ player: PlayerSchema }),
   match: z.object({

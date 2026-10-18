@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const s = getSportsProvider();
     const v = getStreamProvider();
-    return json({ sportsProvider: s.id, isMock: s.isMock, streamProvider: v.id, syncEnabled: Boolean(process.env.SYNC_BACKEND_URL) }, { maxAge: 60 });
+    return json({ sportsProvider: s.id, attribution: s.attribution, streamProvider: v.id, syncEnabled: Boolean(process.env.SYNC_BACKEND_URL) }, { maxAge: 60 });
   } catch (e) {
     return errorResponse(e, "meta");
   }

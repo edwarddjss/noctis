@@ -7,7 +7,7 @@
 export interface UrlPolicy {
   providerHosts: string[];
   globalAllowlist: string[];
-  /** Same-origin demo media under /demo/ (mock provider only). */
+  /** Same-origin demo media under /demo/ (test media; only when STREAM_ALLOW_LOCAL_MEDIA=1). */
   allowLocalDemo?: boolean;
 }
 

@@ -1,4 +1,4 @@
-import type { Competition, Match, MatchDetails, Player, Team, TeamDetails } from "../../domain";
+import type { Competition, Match, MatchDetails, Player, StandingsGroup, Team, TeamDetails } from "../../domain";
 
 export interface RequestOptions {
   signal?: AbortSignal;
@@ -24,8 +24,6 @@ export interface PlayerDetails extends Player {
  */
 export interface SportsDataProvider {
   readonly id: string;
-  /** true for fictional demo data; the UI shows a "Mock data" badge. */
-  readonly isMock: boolean;
   searchTeams(query: string, opts?: RequestOptions): Promise<Team[]>;
   searchPlayers(query: string, opts?: RequestOptions): Promise<Player[]>;
   getTeam(id: string, opts?: RequestOptions): Promise<TeamDetails | null>;
@@ -34,6 +32,10 @@ export interface SportsDataProvider {
   getFixtures(query: FixtureQuery, opts?: RequestOptions): Promise<Match[]>;
   getLiveMatches(opts?: RequestOptions): Promise<Match[]>;
   getMatchDetails(id: string, opts?: RequestOptions): Promise<MatchDetails | null>;
+  /** League table(s); empty for knockout cups or when unavailable. */
+  getStandings(competitionId: string, opts?: RequestOptions): Promise<StandingsGroup[]>;
+  /** Attribution line the UI must show for this data source. */
+  readonly attribution: string;
 }
 
 /** Search input rules shared by all adapters and API routes. */
@@ -44,5 +46,5 @@ export function normalizeQuery(q: string): string | null {
 }
 
 export function isValidId(id: string): boolean {
-  return /^[A-Za-z0-9_-]{1,40}$/.test(id);
+  return /^[A-Za-z0-9_.-]{1,60}$/.test(id) && !id.includes("..");
 }

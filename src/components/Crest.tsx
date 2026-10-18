@@ -1,4 +1,4 @@
-/** Team/competition image with an initials fallback (used for all mock data). */
+/** Team/competition image with an initials fallback when no logo is available. */
 "use client";
 import { useState } from "react";
 

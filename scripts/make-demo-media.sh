@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Generates synthetic demo media (ffmpeg test patterns + tones) for the MOCK
-# stream provider. No third-party footage is used.
+# Generates synthetic test-pattern media (ffmpeg test sources + tones) used by
+# the automated playback tests. No third-party footage is used.
 #   public/demo/demo-{a,b}.webm        VP8/Opus  (plays in Chromium/Firefox)
 #   public/demo/hls-{a,b}/index.m3u8   H.264/AAC HLS (Safari native, hls.js elsewhere)
 #   public/demo/demo-a.en.vtt          sample captions

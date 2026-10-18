@@ -9,7 +9,7 @@
  * restricted; the adapter surfaces that as a `plan_restricted` error.
  */
 import { z } from "zod";
-import type { Competition, Match, MatchDetails, MatchEvent, MatchStatus, Player, Team, TeamDetails } from "../../domain";
+import type { Competition, Match, MatchDetails, MatchEvent, MatchStatus, Player, StandingsGroup, Team, TeamDetails } from "../../domain";
 import { ProviderError } from "../../errors";
 import { TtlCache } from "../../http/cache";
 import { fetchJson, sharedCache } from "../../http/fetch-json";
@@ -87,6 +87,17 @@ const WirePlayerTeamsItem = z.object({
   team: z.object({ id: z.number(), name: z.string(), logo: nstr }),
   seasons: z.array(z.number()),
 });
+
+const WireStandingRow = z.object({
+  rank: z.number(),
+  team: WireFixtureTeam,
+  points: nnum,
+  goalsDiff: nnum,
+  group: nstr,
+  description: nstr,
+  all: z.object({ played: nnum, win: nnum, draw: nnum, lose: nnum, goals: z.object({ for: nnum, against: nnum }).nullish() }),
+});
+const WireStandingsItem = z.object({ league: z.object({ standings: z.array(z.array(WireStandingRow)) }) });
 
 // ---- Mapping -----------------------------------------------------------------
 
@@ -230,7 +241,7 @@ export interface ApiFootballConfig {
 
 export class ApiFootballProvider implements SportsDataProvider {
   readonly id = "api-football";
-  readonly isMock = false;
+  readonly attribution = "Data: API-Football (api-sports.io)";
   private readonly baseUrl: string;
   private readonly ttl: { live: number; fixtures: number; static: number };
   private blockedUntil = 0;
@@ -358,5 +369,29 @@ export class ApiFootballProvider implements SportsDataProvider {
     const item = parseItems(await this.get("/fixtures", { id }, this.ttl.live, opts), WireFixtureItem, "fixture")[0];
     if (!item) return null;
     return { ...mapFixture(item), events: (item.events ?? []).map((e) => mapEvent(e, item.teams.home.id)) };
+  }
+
+  async getStandings(competitionId: string, opts?: RequestOptions): Promise<StandingsGroup[]> {
+    const league = parseItems(await this.get("/leagues", { id: competitionId, current: "true" }, this.ttl.static, opts), WireLeagueItem, "league")[0];
+    const season = league?.seasons?.find((s) => s.current)?.year;
+    if (!season) return [];
+    const items = parseItems(await this.get("/standings", { league: competitionId, season }, this.ttl.fixtures, opts), WireStandingsItem, "standings");
+    const groups = items[0]?.league.standings ?? [];
+    return groups.map((rows, i) => ({
+      name: rows[0]?.group ?? `Group ${i + 1}`,
+      rows: rows.map((r) => ({
+        rank: r.rank,
+        team: mapTeam(r.team),
+        played: r.all.played ?? 0,
+        won: r.all.win ?? 0,
+        drawn: r.all.draw ?? 0,
+        lost: r.all.lose ?? 0,
+        goalsFor: r.all.goals?.for ?? 0,
+        goalsAgainst: r.all.goals?.against ?? 0,
+        goalDifference: r.goalsDiff ?? 0,
+        points: r.points ?? 0,
+        note: opt(r.description),
+      })),
+    }));
   }
 }

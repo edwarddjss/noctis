@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { Attribution } from "@/components/Attribution";
 import { Crest } from "@/components/Crest";
 import { Icon } from "@/components/Icon";
 import { MatchRow } from "@/components/MatchRow";
@@ -14,7 +15,7 @@ export function LiveView() {
   const live = useApi("live", (s) => apiGet("/api/live", schemas.live, s), { pollMs: 20_000 });
   const streams = live.data?.streams ?? {};
   const matches = (live.data?.matches ?? []).filter((m) => !videoOnly || streams[m.id]);
-  const groups = groupByCompetition(matches);
+  const groups = groupByCompetition(matches, live.data?.order);
   const withVideo = (live.data?.matches ?? []).filter((m) => streams[m.id]).length;
 
   return (
@@ -69,6 +70,7 @@ export function LiveView() {
         ))}
       </div>
       {live.data && <p className="small muted pad center">Updated {new Date(live.data.fetchedAt).toLocaleTimeString()} · refreshes automatically</p>}
+      <Attribution />
     </div>
   );
 }

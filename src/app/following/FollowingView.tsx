@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { Attribution } from "@/components/Attribution";
 import { Crest } from "@/components/Crest";
 import { FollowButton } from "@/components/FollowButton";
 import { Icon } from "@/components/Icon";
@@ -144,6 +145,30 @@ function FollowChips({ items, onRemove }: { items: FollowItem[]; onRemove: (i: F
   );
 }
 
+function PopularLeagues() {
+  const comps = useApi("competitions", (s) => apiGet("/api/competitions", schemas.competitions, s));
+  if (!comps.data) return null;
+  return (
+    <section className="section" aria-label="Popular leagues">
+      <h2 className="section__title">Popular leagues</h2>
+      <ul className="card list" data-testid="popular-leagues">
+        {comps.data.competitions.slice(0, 8).map((c) => (
+          <li key={c.id} className="list__row">
+            <Link href={`/competition/${c.id}`} className="list__main">
+              <Crest name={c.name} src={c.logoUrl} round={false} />
+              <span>
+                <span className="list__title">{c.name}</span>
+                {c.country && <span className="list__sub">{c.country}</span>}
+              </span>
+            </Link>
+            <FollowButton compact item={{ kind: "competition", id: c.id, name: c.name, imageUrl: c.logoUrl ?? null }} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function FollowingView() {
   const { state, store } = useFollows();
   const teams = useMemo(() => feedTeamIds(state), [state]);
@@ -165,9 +190,12 @@ export function FollowingView() {
       <FollowChips items={state.items} onRemove={(i) => store.unfollow(i.kind, i.id)} />
 
       {!hasFollows && (
-        <EmptyState icon="star" title="Follow teams, players or leagues">
-          Search above and tap <strong>Follow</strong>. Their live, upcoming and recent matches will show up here. Follows are saved on this device.
-        </EmptyState>
+        <>
+          <EmptyState icon="star" title="Follow teams, players or leagues">
+            Search above and tap <strong>Follow</strong>. Their live, upcoming and recent matches will show up here. Follows are saved on this device.
+          </EmptyState>
+          <PopularLeagues />
+        </>
       )}
 
       {hasFollows && feed.loading && !feed.data && <Skeleton rows={4} />}
@@ -212,6 +240,7 @@ export function FollowingView() {
           </section>
         </div>
       )}
+      <Attribution />
     </div>
   );
 }

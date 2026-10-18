@@ -17,7 +17,7 @@ const list = (v: string | undefined) =>
     .map((h) => `https://${h}`);
 
 const streamHosts = list(process.env.STREAM_HOST_ALLOWLIST);
-const imageHosts = list(process.env.IMAGE_HOSTS ?? "media.api-sports.io");
+const imageHosts = list(process.env.IMAGE_HOSTS ?? "a.espncdn.com,media.api-sports.io");
 
 const csp = [
   "default-src 'self'",

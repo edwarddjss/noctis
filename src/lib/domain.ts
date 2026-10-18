@@ -99,12 +99,35 @@ export function sortMatches(matches: Match[]): Match[] {
   });
 }
 
-export function groupByCompetition(matches: Match[]): { competition: Competition; matches: Match[] }[] {
+/** Groups by competition; `order` (competition ids, most important first) controls group order. */
+export function groupByCompetition(matches: Match[], order: string[] = []): { competition: Competition; matches: Match[] }[] {
   const groups = new Map<string, { competition: Competition; matches: Match[] }>();
   for (const m of matches) {
     const g = groups.get(m.competition.id) ?? { competition: m.competition, matches: [] };
     g.matches.push(m);
     groups.set(m.competition.id, g);
   }
-  return [...groups.values()].sort((a, b) => a.competition.name.localeCompare(b.competition.name));
+  const rank = (id: string) => {
+    const i = order.indexOf(id);
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  return [...groups.values()].sort((a, b) => rank(a.competition.id) - rank(b.competition.id) || a.competition.name.localeCompare(b.competition.name));
 }
+
+export const StandingRowSchema = z.object({
+  rank: z.number(),
+  team: TeamSchema,
+  played: z.number(),
+  won: z.number(),
+  drawn: z.number(),
+  lost: z.number(),
+  goalsFor: z.number(),
+  goalsAgainst: z.number(),
+  goalDifference: z.number(),
+  points: z.number(),
+  note: z.string().optional(),
+});
+export type StandingRow = z.infer<typeof StandingRowSchema>;
+
+export const StandingsGroupSchema = z.object({ name: z.string(), rows: z.array(StandingRowSchema) });
+export type StandingsGroup = z.infer<typeof StandingsGroupSchema>;

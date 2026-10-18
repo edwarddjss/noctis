@@ -11,8 +11,8 @@ import type { AuthorizedStream, CaptionTrack, PlaybackMetadata, StreamProvider, 
 export interface ConfigStreamProviderOptions {
   globalAllowlist: string[];
   now?: () => number;
-  /** Mock/demo mode: allow same-origin /demo/ media and mark streams as demo. */
-  demo?: boolean;
+  /** Allow same-origin /demo/ test media (marked as demo). Development/testing only. */
+  allowLocalMedia?: boolean;
 }
 
 export class ConfigStreamProvider implements StreamProvider {
@@ -21,7 +21,7 @@ export class ConfigStreamProvider implements StreamProvider {
     private readonly config: StreamConfig,
     private readonly opts: ConfigStreamProviderOptions,
   ) {
-    this.id = opts.demo ? "mock-streams" : "config-streams";
+    this.id = "config-streams";
   }
 
   private now() {
@@ -46,14 +46,14 @@ export class ConfigStreamProvider implements StreamProvider {
       captions: s.captions,
       rightsNote: p.rightsNote,
       airplayAllowed: p.airplayAllowed,
-      isDemo: Boolean(this.opts.demo),
+      isDemo: s.sources.some((x) => x.url.startsWith("/demo/")),
     };
   }
 
   /** URL policy for a provider (used by the admin probe). */
   policyFor(providerId: string): UrlPolicy | null {
     const p = this.config.providers.find((x) => x.id === providerId);
-    return p ? { providerHosts: p.allowedHosts, globalAllowlist: this.opts.globalAllowlist, allowLocalDemo: this.opts.demo } : null;
+    return p ? { providerHosts: p.allowedHosts, globalAllowlist: this.opts.globalAllowlist, allowLocalDemo: this.opts.allowLocalMedia } : null;
   }
 
   async validateStream(stream: AuthorizedStream): Promise<StreamValidationResult> {
@@ -66,7 +66,7 @@ export class ConfigStreamProvider implements StreamProvider {
     const now = this.now();
     if (entry.availableFrom && Date.parse(entry.availableFrom) > now) reasons.push("stream window has not opened");
     if (entry.availableUntil && Date.parse(entry.availableUntil) < now) reasons.push("stream window has closed");
-    const policy = { providerHosts: provider.allowedHosts, globalAllowlist: this.opts.globalAllowlist, allowLocalDemo: this.opts.demo };
+    const policy = { providerHosts: provider.allowedHosts, globalAllowlist: this.opts.globalAllowlist, allowLocalDemo: this.opts.allowLocalMedia };
     for (const src of [...stream.sources.map((s) => s.url), ...stream.captions.map((c) => c.src)]) {
       const why = checkStreamUrl(src, policy);
       if (why) reasons.push(why);

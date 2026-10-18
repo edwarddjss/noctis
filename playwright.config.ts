@@ -1,10 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const CYCLE_MS = 150 * 60_000;
-// Freeze the mock clock at cycle position 40 min so the set of live matches
-// (and which have demo streams) is known. See tests/unit/mock-provider.test.ts.
-const frozen = new Date(Math.floor(Date.now() / CYCLE_MS) * CYCLE_MS + 40 * 60_000).toISOString();
 const PORT = 3210;
+const STUB = 3299;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -14,11 +11,28 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },
   projects: [{ name: "mobile-chromium", use: { ...devices["Pixel 7"] } }],
-  webServer: {
-    command: `npm run build && npx next start -p ${PORT}`,
-    url: `http://localhost:${PORT}/api/meta`,
-    reuseExistingServer: false,
-    timeout: 180_000,
-    env: { SPORTS_PROVIDER: "mock", STREAM_PROVIDER: "mock", MOCK_FREEZE_TIME: frozen, NEXT_TELEMETRY_DISABLED: "1" },
-  },
+  webServer: [
+    {
+      // deterministic stand-in for ESPN's JSON (tests/fixtures/espn.ts)
+      command: `node tests/e2e/espn-stub.mts`,
+      url: `http://localhost:${STUB}/health`,
+      env: { STUB_PORT: String(STUB) },
+      reuseExistingServer: false,
+    },
+    {
+      command: `npm run build && npx next start -p ${PORT}`,
+      url: `http://localhost:${PORT}/api/meta`,
+      reuseExistingServer: false,
+      timeout: 180_000,
+      env: {
+        SPORTS_PROVIDER: "espn",
+        ESPN_BASE_URL: `http://localhost:${STUB}`,
+        ESPN_WEB_BASE_URL: `http://localhost:${STUB}`,
+        STREAM_PROVIDER: "config",
+        STREAM_CONFIG_PATH: "tests/fixtures/streams.e2e.json",
+        STREAM_ALLOW_LOCAL_MEDIA: "1",
+        NEXT_TELEMETRY_DISABLED: "1",
+      },
+    },
+  ],
 });

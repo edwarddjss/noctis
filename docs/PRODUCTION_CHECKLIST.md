@@ -7,7 +7,8 @@
 - [ ] DRM requirements (FairPlay/Widevine) confirmed with the provider; integrate via their SDK only
 - [ ] `airplayAllowed` set per provider according to contract
 - [ ] Terms of use and privacy policy published; club/league trademarks used per provider terms
-- [ ] Mock banner gone (`SPORTS_PROVIDER` ≠ `mock`), demo streams disabled (`STREAM_PROVIDER=config`)
+- [ ] Decide on the data source: ESPN (free, unofficial, no guarantees) vs a licensed feed for commercial use
+- [ ] `STREAM_ALLOW_LOCAL_MEDIA` unset in production (test media only)
 
 ## Configuration & secrets
 - [ ] `API_FOOTBALL_KEY`, `ADMIN_API_TOKEN` (≥ 32 random chars) stored in the host's secret manager

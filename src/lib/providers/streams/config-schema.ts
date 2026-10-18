@@ -24,14 +24,14 @@ export const StreamConfigSchema = z
     ),
     competitions: z.array(
       z.object({
-        competitionId: z.string().min(1).max(40),
+        competitionId: z.string().min(1).max(60),
         providerId: z.string(),
       }),
     ),
     streams: z.array(
       z.object({
-        matchId: z.string().min(1).max(40),
-        competitionId: z.string().min(1).max(40),
+        matchId: z.string().min(1).max(60),
+        competitionId: z.string().min(1).max(60),
         providerId: z.string(),
         label: z.string().min(1).max(80),
         sources: z.array(StreamSourceSchema).min(1).max(4),

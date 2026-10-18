@@ -4,10 +4,10 @@
 
 1. **Domain** (`src/lib/domain.ts`): provider-neutral Zod schemas and types: `Team`, `Player`, `Competition`, `Match`, `MatchDetails`, `TeamDetails`.
 2. **Adapters** (`src/lib/providers/**`): map provider wire formats into domain types. Server-only.
-   - `sports/mock.ts`: fictional data. Today's fixtures cycle scheduled → live → HT → FT every 150 min so there is always something live. `MOCK_FREEZE_TIME` pins the clock for tests and demos.
+   - `sports/espn.ts` (default): ESPN's public soccer JSON. Ids are composite `<leagueSlug>.<espnId>` (e.g. `eng.1.359` = Arsenal) because ESPN endpoints are scoped by league. Live scores = today's scoreboard for every league in `espn-leagues.ts`, fetched 6 at a time and cached 30 s for all users. Team search = substring match over each league's cached team list (refreshed daily). Player search = ESPN's common search endpoint. Tables = `/apis/v2/.../standings`. Parsing is lenient: unknown fields are ignored and malformed items are dropped, not fatal.
    - `sports/api-football.ts`: API-Football v3. Every item is validated on its own (one bad record is dropped, not fatal). The `errors` envelope is classified (`unauthorized`, `rate_limited`, `plan_restricted`). Quota headers are tracked (`x-ratelimit-requests-remaining`, `x-ratelimit-remaining`), and upstream calls stop until the reset.
    - `streams/config-provider.ts`: admin-config-backed authorized streams.
-   - `streams/mock.ts`: the same provider over a built-in config pointing at `/public/demo` test patterns.
+   - `streams/none.ts` (default): no streams anywhere until video is set up.
 3. **HTTP** (`src/lib/http/fetch-json.ts`): timeout + caller abort (`AbortSignal.any`), retries with full-jitter exponential backoff, `Retry-After`, schema validation, TTL/LRU cache, stale-on-error, in-flight de-duplication, and a pre-flight quota gate.
 4. **Registry** (`src/lib/server/registry.ts`): picks adapters from env vars (`SPORTS_PROVIDER`, `STREAM_PROVIDER`).
 5. **Route handlers** (`src/app/api/**`): validate input (ids `^[A-Za-z0-9_-]{1,40}$`, search 3–40 letters/numbers), map errors to status codes, and set cache headers. Stream responses are `private, no-store`.

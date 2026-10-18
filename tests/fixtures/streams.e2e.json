@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "providers": [
+    {
+      "id": "test-media",
+      "name": "MatchNest test media",
+      "allowedHosts": ["test.matchnest.invalid"],
+      "airplayAllowed": true,
+      "rightsNote": "Synthetic test-pattern video for automated tests. Not a real broadcast."
+    }
+  ],
+  "competitions": [{ "competitionId": "eng.1", "providerId": "test-media" }],
+  "streams": [
+    {
+      "matchId": "eng.1.900001",
+      "competitionId": "eng.1",
+      "providerId": "test-media",
+      "label": "Test feed A",
+      "sources": [
+        { "url": "/demo/hls-a/index.m3u8", "type": "hls" },
+        { "url": "/demo/demo-a.webm", "type": "webm" }
+      ],
+      "captions": [{ "src": "/demo/demo-a.en.vtt", "srclang": "en", "label": "English (test)" }]
+    },
+    {
+      "matchId": "eng.1.900003",
+      "competitionId": "eng.1",
+      "providerId": "test-media",
+      "label": "Test feed B",
+      "sources": [
+        { "url": "/demo/hls-b/index.m3u8", "type": "hls" },
+        { "url": "/demo/demo-b.webm", "type": "webm" }
+      ]
+    },
+    {
+      "matchId": "eng.1.900004",
+      "competitionId": "eng.1",
+      "providerId": "test-media",
+      "label": "Test feed (intentionally broken)",
+      "sources": [
+        { "url": "/demo/missing/index.m3u8", "type": "hls" },
+        { "url": "/demo/missing/feed.webm", "type": "webm" }
+      ]
+    }
+  ]
+}

@@ -10,11 +10,11 @@ export type FollowKind = z.infer<typeof FollowKindSchema>;
 
 export const FollowItemSchema = z.object({
   kind: FollowKindSchema,
-  id: z.string().min(1).max(40),
+  id: z.string().min(1).max(60),
   name: z.string().min(1).max(120),
   imageUrl: z.string().max(2048).nullable().optional(),
   /** For players: their club, so the feed can show the club's matches. */
-  teamId: z.string().max(40).optional(),
+  teamId: z.string().max(60).optional(),
   teamName: z.string().max(120).optional(),
   addedAt: z.number(),
 });
