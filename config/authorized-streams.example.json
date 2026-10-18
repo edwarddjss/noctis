@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "providers": [
+    {
+      "id": "example-licensed-provider",
+      "name": "Example Licensed Provider (placeholder)",
+      "allowedHosts": ["streams.example.com"],
+      "airplayAllowed": true,
+      "rightsNote": "PLACEHOLDER. Replace with the provider named in your signed distribution agreement."
+    }
+  ],
+  "competitions": [
+    { "competitionId": "REPLACE_WITH_PROVIDER_COMPETITION_ID", "providerId": "example-licensed-provider" }
+  ],
+  "streams": [
+    {
+      "matchId": "REPLACE_WITH_MATCH_ID",
+      "competitionId": "REPLACE_WITH_PROVIDER_COMPETITION_ID",
+      "providerId": "example-licensed-provider",
+      "label": "Example authorized feed (placeholder)",
+      "sources": [{ "url": "https://streams.example.com/path/to/master.m3u8", "type": "hls" }],
+      "captions": [],
+      "availableFrom": "2026-01-01T00:00:00Z",
+      "availableUntil": "2026-01-01T03:00:00Z"
+    }
+  ]
+}
