@@ -168,3 +168,7 @@ More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · Security & CSP: [
 | Account sync | Your own auth + storage backend (`/api/sync` is a 501 stub). |
 
 Everything else (app shell, follows, UI, ESPN data, tests) runs with no account or key.
+
+## Match directory API
+
+The match directory is available at `/api/v1` through a Node.js Next.js route, including `/api/v1/catalog`, `/api/v1/matches`, `/api/v1/leagues`, and `/api/v1/health`. See [the endpoint reference](docs/MATCH_DIRECTORY.md). Optional server environment variables: `DIRECTORY_URL` and `CORS_ORIGIN`. Cache state is per warm Vercel instance; cold starts fetch a fresh snapshot. Directory match IDs are source IDs and are separate from the existing sports-provider IDs.
