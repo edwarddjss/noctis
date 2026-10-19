@@ -1,4 +1,4 @@
-# MatchNest
+# Noctis
 
 A mobile-first soccer **Progressive Web App**. Follow teams, players and leagues; see live scores across competitions; and, when a licensed provider or administrator has supplied one, watch an **authorized** stream. Includes multi-view (up to 4 streams) and AirPlay.
 
@@ -172,3 +172,13 @@ Everything else (app shell, follows, UI, ESPN data, tests) runs with no account 
 ## Match directory API
 
 The match directory is available at `/api/v1` through a Node.js Next.js route, including `/api/v1/catalog`, `/api/v1/matches`, `/api/v1/leagues`, and `/api/v1/health`. See [the endpoint reference](docs/MATCH_DIRECTORY.md). Optional server environment variables: `DIRECTORY_URL` and `CORS_ORIGIN`. Cache state is per warm Vercel instance; cold starts fetch a fresh snapshot. Directory match IDs are source IDs and are separate from the existing sports-provider IDs.
+
+The landing page and Matches tab now load `/api/v1/catalog` from the Fútbol Libre directory API. Match rows open `/directory/:id`, which loads `/api/v1/matches/:id` and displays published channel/player-page links. Search and league filters operate on that directory snapshot. ESPN scores remain available at `/scores`; Following continues to use ESPN team/player IDs.
+
+## Private access
+
+Vercel Authentication is enabled for all deployments of the Noctis project. Access is controlled by Vercel team membership and approved deployment access. Keep protection enabled when adding a custom domain. The app's service worker removes legacy offline caches and does not cache pages or API data. Do not distribute deployment bypass links as permanent invitations.
+
+## Player discovery
+
+Discover searches ESPN's player index independently of the daily Fútbol Libre match feed. Search accepts common aliases such as `Vini Jr` and `CR7`, removes accent differences for lookup, and maps both nested and flat team relationships. Player cards show the provider's name, club, position and nationality when available, with a headshot or initials fallback. Provider coverage determines which players can be found.

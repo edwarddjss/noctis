@@ -168,6 +168,11 @@ export function standings(league: string) {
 }
 
 export function search(q: string) {
+  if (q.toLowerCase() === "vinicius") return { items: [{
+    id: "252107", displayName: "Vinícius Júnior", type: "player", sport: "soccer", league: "esp.1", defaultLeagueSlug: "ESP.1",
+    jersey: "7", position: { displayName: "Forward" }, flag: { alt: "Brazil" },
+    teamRelationships: [{ displayName: "Real Madrid (Spanish LALIGA)", core: { id: "86", displayName: "Real Madrid", isNational: false } }],
+  }] };
   const players = [{ id: "248949", displayName: "Bukayo Saka", type: "player", sport: "soccer", defaultLeagueSlug: "eng.1", teamRelationships: [{ id: "359", displayName: "Arsenal" }] }];
   return { items: players.filter((p) => p.displayName.toLowerCase().includes(q.toLowerCase())) };
 }

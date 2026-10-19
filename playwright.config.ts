@@ -20,12 +20,13 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: `npm run build && npx next start -p ${PORT}`,
+      command: `npm run build && npx next start -H 127.0.0.1 -p ${PORT}`,
       url: `http://localhost:${PORT}/api/meta`,
       reuseExistingServer: false,
       timeout: 180_000,
       env: {
         SPORTS_PROVIDER: "espn",
+        DIRECTORY_URL: `http://localhost:${STUB}/diaries.json`,
         ESPN_BASE_URL: `http://localhost:${STUB}`,
         ESPN_WEB_BASE_URL: `http://localhost:${STUB}`,
         STREAM_PROVIDER: "config",

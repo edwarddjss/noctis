@@ -4,8 +4,8 @@ import { usePathname } from "next/navigation";
 import { Icon } from "./Icon";
 
 const TABS = [
-  { href: "/following", label: "Following", icon: "star" },
-  { href: "/live", label: "Live", icon: "live" },
+  { href: "/following", label: "Discover", icon: "search" },
+  { href: "/live", label: "Matches", icon: "live" },
 ];
 
 export function TabBar() {

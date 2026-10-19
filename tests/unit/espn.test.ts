@@ -175,6 +175,16 @@ describe("EspnProvider", () => {
     expect(d).toMatchObject({ position: "Forward", nationality: "England", teamId: "eng.1.359" });
   });
 
+  it("finds Vini Jr with accented names, nested team relationships and uppercase league slugs", async () => {
+    const { provider, fetchImpl } = setup();
+    for (const query of ["vini jr", "Vinícius Júnior", "Vini"]) {
+      const players = await provider.searchPlayers(query);
+      expect(players[0]).toMatchObject({ id: "esp.1.252107", name: "Vinícius Júnior", teamId: "esp.1.86", teamName: "Real Madrid", position: "Forward", nationality: "Brazil", number: 7 });
+      expect(players[0]?.photoUrl).toContain("252107.png");
+    }
+    expect(fetchImpl.mock.calls.some(call => String(call[0]).includes("query=Vinicius"))).toBe(true);
+  });
+
   it("lists covered competitions in priority order and filters them", async () => {
     const { provider } = setup();
     const all = await provider.getCompetitions();

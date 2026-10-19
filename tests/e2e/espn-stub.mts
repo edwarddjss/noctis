@@ -4,6 +4,7 @@
  */
 import { createServer } from "node:http";
 import * as F from "../fixtures/espn.ts";
+import { directoryFixture } from "../fixtures/directory.ts";
 
 const PORT = Number(process.env.STUB_PORT ?? 3299);
 
@@ -21,6 +22,7 @@ createServer((req, res) => {
   else if ((m = /^\/apis\/v2\/sports\/soccer\/([^/]+)\/standings$/.exec(p))) body = F.standings(m[1]!);
   else if (p === "/apis/common/v3/search") body = F.search(url.searchParams.get("query") ?? "");
   else if ((m = /^\/apis\/common\/v3\/sports\/soccer\/[^/]+\/athletes\/(\d+)$/.exec(p))) body = F.athlete(m[1]!);
+  else if (p === "/diaries.json") body = directoryFixture;
   else if (p === "/health") body = { ok: true };
   res.writeHead(body ? 200 : 404, { "content-type": "application/json" });
   res.end(JSON.stringify(body ?? { code: 404, message: "Not found" }));

@@ -121,6 +121,7 @@ const RosterSchema = z.object({ athletes: z.array(z.unknown()).default([]) }).pa
 const AthleteSchemaWire = z.object({ athlete: WireAthlete }).passthrough();
 
 const SearchSchema = z.object({ items: z.array(z.unknown()).default([]) }).passthrough();
+const SearchTeam = z.object({ id: z.union([z.string(), z.number()]).transform(String).optional(), displayName: str, isNational: z.boolean().optional() }).passthrough();
 const SearchItem = z
   .object({
     id: z.union([z.string(), z.number()]).transform(String),
@@ -130,7 +131,11 @@ const SearchItem = z
     league: str,
     defaultLeagueSlug: str,
     image: z.object({ default: str }).passthrough().nullish(),
-    teamRelationships: z.array(z.object({ id: z.union([z.string(), z.number()]).transform(String), displayName: str }).passthrough()).nullish(),
+    teamRelationships: z.array(SearchTeam.extend({ core: SearchTeam.optional() })).nullish(),
+    position: z.object({ displayName: str }).passthrough().nullish(),
+    jersey: str,
+    flag: z.object({ alt: str }).passthrough().nullish(),
+    headshot: z.object({ href: str }).passthrough().nullish(),
   })
   .passthrough();
 
@@ -433,8 +438,20 @@ export class EspnProvider implements SportsDataProvider {
   }
 
   async searchPlayers(query: string, opts?: RequestOptions): Promise<Player[]> {
-    const url = `${this.web}/apis/common/v3/search?query=${encodeURIComponent(query)}&type=player&sport=soccer&limit=20`;
-    const body = await this.get(url, SearchSchema, this.ttl.static, opts);
+    // ESPN's index uses full names rather than common abbreviations.
+    const normalized = query.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const canonical = normalized
+      .replace(/\bvini(?:cius)?[ .]*(?:jr\.?|junior)?\b/gi, "Vinicius")
+      .replace(/\bcr7\b/gi, "Cristiano Ronaldo")
+      .replace(/\bjr\.?$/i, "Junior");
+    const search = (q: string) => this.get(
+      `${this.web}/apis/common/v3/search?query=${encodeURIComponent(q)}&type=player&sport=soccer&limit=50`,
+      SearchSchema, 3600, opts,
+    );
+    let body = await search(canonical);
+    // Prefixes can be absent from the multi-word index: use the strongest term.
+    if (!body.items.length && canonical.includes(" ")) body = await search(canonical.split(/\s+/)[0]!);
+    const seen = new Set<string>();
     const out: Player[] = [];
     for (const raw of body.items) {
       const p = SearchItem.safeParse(raw);
@@ -442,15 +459,19 @@ export class EspnProvider implements SportsDataProvider {
       const it = p.data;
       if (it.sport && it.sport !== "soccer") continue;
       if (it.type && it.type !== "player") continue;
-      const league = it.defaultLeagueSlug ?? it.league;
-      if (!league) continue;
-      const team = it.teamRelationships?.[0];
+      const league = (it.league ?? it.defaultLeagueSlug)?.toLowerCase();
+      if (!league || seen.has(it.id)) continue;
+      seen.add(it.id);
+      const teams = (it.teamRelationships ?? []).map(t => t.core ?? t);
+      const team = teams.find(t => t.id && !t.isNational) ?? teams.find(t => t.id);
       out.push({
-        id: makeId(league, it.id),
-        name: it.displayName,
-        photoUrl: it.image?.default ?? null,
-        teamId: team ? makeId(league, team.id) : undefined,
+        id: makeId(league, it.id), name: it.displayName,
+        photoUrl: it.headshot?.href ?? it.image?.default ?? `https://a.espncdn.com/i/headshots/soccer/players/full/${it.id}.png`,
+        teamId: team?.id ? makeId(league, team.id) : undefined,
         teamName: team?.displayName ?? undefined,
+        position: it.position?.displayName ?? undefined,
+        nationality: it.flag?.alt ?? undefined,
+        number: it.jersey && /^\d+$/.test(it.jersey) ? Number(it.jersey) : undefined,
       });
     }
     return out;

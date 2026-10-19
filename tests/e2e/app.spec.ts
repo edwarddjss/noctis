@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 
 test("follow and unfollow a team", async ({ page }) => {
   await page.goto("/following");
-  await expect(page.getByText("Follow teams, players or leagues")).toBeVisible();
+  await page.getByRole("tab", { name: "Teams", exact: true }).click();
   await expect(page.getByTestId("popular-leagues")).toContainText("Premier League");
   await page.getByTestId("search-input").fill("Arsenal");
   await page.getByTestId("search-results").getByRole("button", { name: "Follow Arsenal" }).click();
@@ -27,7 +27,7 @@ test("follow and unfollow a team", async ({ page }) => {
 
   await page.getByTestId("follow-chips").getByRole("button", { name: "Unfollow Arsenal" }).click();
   await expect(page.getByTestId("follow-chips")).toHaveCount(0);
-  await expect(page.getByText("Follow teams, players or leagues")).toBeVisible();
+  await page.getByRole("tab", { name: "Teams", exact: true }).click();
 });
 
 test("follow a player adds their club's matches", async ({ page }) => {
@@ -39,7 +39,7 @@ test("follow a player adds their club's matches", async ({ page }) => {
 });
 
 test("live tab shows live matches grouped by competition with stream availability", async ({ page }) => {
-  await page.goto("/live");
+  await page.goto("/scores");
   const list = page.getByTestId("live-list");
   await expect(list.getByTestId("match-row")).toHaveCount(4);
   await expect(list.locator("h2").first()).toContainText("Premier League"); // priority order
@@ -70,7 +70,7 @@ test("match page shows goal events", async ({ page }) => {
 });
 
 test("day strip shows every match on a day, not just live ones", async ({ page }) => {
-  await page.goto("/live");
+  await page.goto("/scores");
   await page.getByTestId("day-strip").getByRole("tab", { name: "Today" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Matches");
   const list = page.getByTestId("live-list");
@@ -133,7 +133,7 @@ test("playback failure is handled gracefully", async ({ page }) => {
 });
 
 test("multi-view opens with panels, a bandwidth warning and independent mute", async ({ page }) => {
-  await page.goto("/live");
+  await page.goto("/scores");
   await page.getByTestId("open-multiview").click();
   await expect(page).toHaveURL(/\/multiview/);
   await page.getByTestId("layout-4").click();
@@ -163,8 +163,8 @@ test("multi-view opens with panels, a bandwidth warning and independent mute", a
 
 test("PWA manifest and service worker are served", async ({ request }) => {
   const manifest = await (await request.get("/manifest.webmanifest")).json();
-  expect(manifest).toMatchObject({ name: "MatchNest", display: "standalone" });
+  expect(manifest).toMatchObject({ name: "Noctis", display: "standalone" });
   const sw = await request.get("/sw.js");
-  expect(await sw.text()).toContain("APP SHELL CACHING ONLY");
+  expect(await sw.text()).toContain("all requests use the network");
   expect((await request.get("/icons/180")).headers()["content-type"]).toContain("image/png");
 });

@@ -5,6 +5,7 @@ import { Attribution } from "@/components/Attribution";
 import { Crest } from "@/components/Crest";
 import { FollowButton } from "@/components/FollowButton";
 import { Icon } from "@/components/Icon";
+import { PlayerCard } from "@/components/PlayerCard";
 import { MatchRow } from "@/components/MatchRow";
 import { EmptyState, ErrorState, Skeleton } from "@/components/States";
 import { isLive } from "@/lib/domain";
@@ -28,24 +29,24 @@ function useDebounced<T>(value: T, ms: number): T {
 
 function SearchPanel() {
   const [q, setQ] = useState("");
-  const [kind, setKind] = useState<Kind>("teams");
+  const [kind, setKind] = useState<Kind>("players");
   const dq = useDebounced(q.trim(), 300);
   const key = dq.length >= 3 ? `${kind}:${dq}` : null;
   const res = useApi(key, async (signal) => {
     const url = `/api/search?kind=${kind}&q=${encodeURIComponent(dq)}`;
-    if (kind === "players") return { kind, items: (await apiGet(url, schemas.players, signal)).players };
-    if (kind === "competitions") return { kind, items: (await apiGet(url, schemas.competitions, signal)).competitions };
-    return { kind, items: (await apiGet(url, schemas.teams, signal)).teams };
+    if (kind === "players") return { kind, query: dq, items: (await apiGet(url, schemas.players, signal)).players };
+    if (kind === "competitions") return { kind, query: dq, items: (await apiGet(url, schemas.competitions, signal)).competitions };
+    return { kind, query: dq, items: (await apiGet(url, schemas.teams, signal)).teams };
   });
 
   return (
-    <section className="card search" aria-label="Search">
+    <section className="discovery-search" aria-label="Search">
       <div className="search__box">
         <Icon name="search" size={18} />
         <input
           type="search"
           inputMode="search"
-          placeholder={`Search ${KIND_LABEL[kind].toLowerCase()}`}
+          placeholder={kind === "players" ? "Search any player…" : `Search ${KIND_LABEL[kind].toLowerCase()}`}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           maxLength={40}
@@ -61,18 +62,19 @@ function SearchPanel() {
         )}
       </div>
       <div className="segmented" role="tablist" aria-label="Search type">
-        {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
+        {(["players", "teams", "competitions"] as Kind[]).map((k) => (
           <button key={k} type="button" role="tab" aria-selected={kind === k} className={kind === k ? "is-active" : ""} onClick={() => setKind(k)}>
             {KIND_LABEL[k]}
           </button>
         ))}
       </div>
+      {!q.trim() && kind === "players" && <div className="search-suggestions"><span>Try</span>{["Vini Jr", "Neymar", "Estêvão", "Messi"].map(name => <button key={name} type="button" onClick={() => setQ(name)}>{name}</button>)}</div>}
       {q.trim().length > 0 && q.trim().length < 3 && <p className="small muted pad">Type at least 3 characters.</p>}
       {key && res.loading && !res.data && <Skeleton rows={2} />}
       {key && res.error != null && <ErrorState message={errorMessage(res.error)} onRetry={res.refresh} />}
-      {key && res.data && res.data.items.length === 0 && <p className="small muted pad">No {KIND_LABEL[kind].toLowerCase()} found for “{dq}”.</p>}
-      {key && res.data && res.data.items.length > 0 && (
-        <ul className="list" data-testid="search-results">
+      {key && res.data && res.data.query === dq && res.data.items.length === 0 && <p className="small muted pad">No {KIND_LABEL[kind].toLowerCase()} found for “{dq}”.</p>}
+      {key && res.data && res.data.query === dq && dq === q.trim() && res.data.items.length > 0 && (
+        <ul className={res.data.kind === "players" ? "player-grid" : "card list"} data-testid="search-results">
           {res.data.kind === "teams" &&
             res.data.items.map((t) => (
               <li key={t.id} className="list__row">
@@ -86,27 +88,7 @@ function SearchPanel() {
                 <FollowButton compact item={{ kind: "team", id: t.id, name: t.name, imageUrl: t.crestUrl ?? null }} />
               </li>
             ))}
-          {res.data.kind === "players" &&
-            res.data.items.map((p) => (
-              <li key={p.id} className="list__row">
-                <Link href={`/player/${p.id}`} className="list__main">
-                  <Crest name={p.name} src={p.photoUrl} />
-                  <span>
-                    <span className="list__title">{p.name}</span>
-                    <span className="list__sub">{[p.position, p.teamName ?? p.nationality].filter(Boolean).join(" · ")}</span>
-                  </span>
-                </Link>
-                <FollowButton
-                  compact
-                  item={{ kind: "player", id: p.id, name: p.name, imageUrl: p.photoUrl ?? null, teamId: p.teamId, teamName: p.teamName }}
-                  resolve={async () => {
-                    if (p.teamId) return null;
-                    const { player } = await apiGet(`/api/players/${p.id}`, schemas.player);
-                    return { kind: "player", id: p.id, name: p.name, imageUrl: p.photoUrl ?? null, teamId: player.teamId, teamName: player.teamName };
-                  }}
-                />
-              </li>
-            ))}
+          {res.data.kind === "players" && res.data.items.map(p => <li key={p.id}><PlayerCard player={p} /></li>)}
           {res.data.kind === "competitions" &&
             res.data.items.map((c) => (
               <li key={c.id} className="list__row">
@@ -186,16 +168,14 @@ export function FollowingView() {
   return (
     <div className="page">
       <header className="page__header">
-        <h1>Following</h1>
+        <div><p className="eyebrow">NOCTIS</p><h1>Discover</h1><p className="page-subtitle">Find a player. Keep up with their club.</p></div>
       </header>
       <SearchPanel />
       <FollowChips items={state.items} onRemove={(i) => store.unfollow(i.kind, i.id)} />
 
       {!hasFollows && (
         <>
-          <EmptyState icon="star" title="Follow teams, players or leagues">
-            Search above and tap <strong>Follow</strong>. Their live, upcoming and recent matches will show up here. Follows are saved on this device.
-          </EmptyState>
+          <p className="small muted discovery-note">Follow a player to add their club’s matches to your feed.</p>
           <PopularLeagues />
         </>
       )}
