@@ -186,3 +186,9 @@ Discover searches ESPN's player index independently of the daily Fútbol Libre m
 ## Player containment
 
 Directory channel buttons open a sandboxed in-app iframe instead of launching external tabs. The sandbox permits scripts and media but omits popup, top-navigation, form, download and modal permissions. Frame origins are explicitly allowlisted and checked before rendering. Tests exercise an attempted popup and top-level navigation. This containment blocks disruptive browsing behavior; it does not strip third-party DOM overlays or advertisements encoded into video. Direct stream-only playback requires a usable media URL from the source; inspecting the current wrapper did not provide one, and its nested player returned HTTP 403 during inspection.
+
+### Direct live channels
+
+`/channels` offers CBS Sports Golazo Network, beIN SPORTS XTRA and Africa 24 Sport using the existing native Safari / hls.js player. `/api/channels` exposes the curated catalog with private, no-store responses. These public feeds were found in iptv-org and their playlists and segments checked on 2026-10-19. They load no provider HTML, ad scripts or iframe player pages. Broadcast commercials and regional availability still apply; these are channels, not guaranteed streams for directory fixtures. No HAR tokens, cookies or authorization-header rewriting are stored or used.
+
+Media/connect CSP permissions include the selected channels and their media CDN domains. Existing Vercel deployment protection also covers these pages and API. Run `TEST_LIVE_CHANNELS=1 npx playwright test tests/e2e/channels.spec.ts` for opt-in real-feed verification; live availability can change. A browser with H.264/AAC support is required to decode the video.

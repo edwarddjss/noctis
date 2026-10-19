@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { DIRECTORY_PLAYER_HOSTS } from "./src/lib/directory/player-policy";
+import { CHANNEL_MEDIA_ORIGINS } from "./src/lib/channels";
 
 /**
  * Content Security Policy. Stream and image hosts are derived from env at
@@ -17,7 +18,7 @@ const list = (v: string | undefined) =>
     .filter((s) => /^[a-z0-9.-]+$/i.test(s))
     .map((h) => `https://${h}`);
 
-const streamHosts = list(process.env.STREAM_HOST_ALLOWLIST);
+const streamHosts = [...list(process.env.STREAM_HOST_ALLOWLIST), ...CHANNEL_MEDIA_ORIGINS];
 const imageHosts = list(process.env.IMAGE_HOSTS ?? "a.espncdn.com,media.api-sports.io");
 
 const csp = [

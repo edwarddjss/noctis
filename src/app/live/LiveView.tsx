@@ -18,6 +18,7 @@ export function LiveView() {
 
   return <div className="page">
     <header className="page__header"><div><p className="eyebrow">NOCTIS</p><h1>Matchday</h1></div><Link href="/scores" className="btn btn--ghost btn--small">Scores</Link></header>
+    <Link className="btn btn--ghost" href="/channels">Watch live channels →</Link>
     <p className="directory-source">Fútbol Libre · times in your timezone</p>
     <section className="directory-filter" aria-label="Filter matches">
       <div className="search__box"><input type="search" aria-label="Search matches" placeholder="Search teams or leagues" value={query} onChange={e => setQuery(e.target.value)} /></div>

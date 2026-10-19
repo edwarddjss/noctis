@@ -9,7 +9,8 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
-  use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },
+  use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure",
+    launchOptions: process.env.TEST_BROWSER_PATH ? { executablePath: process.env.TEST_BROWSER_PATH } : undefined },
   projects: [{ name: "mobile-chromium", use: { ...devices["Pixel 7"] } }],
   webServer: [
     {
