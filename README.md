@@ -182,3 +182,7 @@ Vercel Authentication is enabled for all deployments of the Noctis project. Acce
 ## Player discovery
 
 Discover searches ESPN's player index independently of the daily Fútbol Libre match feed. Search accepts common aliases such as `Vini Jr` and `CR7`, removes accent differences for lookup, and maps both nested and flat team relationships. Player cards show the provider's name, club, position and nationality when available, with a headshot or initials fallback. Provider coverage determines which players can be found.
+
+## Player containment
+
+Directory channel buttons open a sandboxed in-app iframe instead of launching external tabs. The sandbox permits scripts and media but omits popup, top-navigation, form, download and modal permissions. Frame origins are explicitly allowlisted and checked before rendering. Tests exercise an attempted popup and top-level navigation. This containment blocks disruptive browsing behavior; it does not strip third-party DOM overlays or advertisements encoded into video. Direct stream-only playback requires a usable media URL from the source; inspecting the current wrapper did not provide one, and its nested player returned HTTP 403 during inspection.

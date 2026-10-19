@@ -17,8 +17,3 @@ export const directoryCatalog = z.object({
 });
 export const directoryMatch = z.object({ match, meta });
 
-export function playerLink(value: string | null): string | null {
-  if (!value) return null;
-  try { const url = new URL(value); return url.protocol === "https:" ? url.href : null; }
-  catch { return null; }
-}

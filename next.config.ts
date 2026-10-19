@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { DIRECTORY_PLAYER_HOSTS } from "./src/lib/directory/player-policy";
 
 /**
  * Content Security Policy. Stream and image hosts are derived from env at
@@ -29,7 +30,7 @@ const csp = [
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "font-src 'self'",
-  "frame-src 'none'",
+  `frame-src ${DIRECTORY_PLAYER_HOSTS.map(host => `https://${host}`).join(" ")}`,
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",

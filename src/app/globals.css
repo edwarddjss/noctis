@@ -1138,3 +1138,6 @@ h2 {
 }
 @media (prefers-reduced-motion: reduce) { .player-card { transition: none; } }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.embedded-player { margin: 20px 0 28px; }
+.embedded-player__header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 13px; font-weight: 600; }
+.embedded-player iframe { display: block; width: 100%; aspect-ratio: 16/9; border: 0; border-radius: 12px; background: #111; }
